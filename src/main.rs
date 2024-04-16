@@ -8,6 +8,16 @@
 #![forbid(unsafe_code)]
 #![allow(clippy::must_use_candidate)]
 
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+struct Args {
+    // Name of manual
+    name: String,
+}
+
 fn main() {
-    println!("Hello, world!");
+    let args = Args::parse();
+
+    println!("You are trying to access, {}", args.name);
 }

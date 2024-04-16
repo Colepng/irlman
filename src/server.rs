@@ -8,6 +8,12 @@
 #![forbid(unsafe_code)]
 #![allow(clippy::must_use_candidate)]
 
-fn main() {
-    println!("Hello, world!");
+use axum::{routing::get, Router};
+
+#[tokio::main]
+async fn main() {
+    let app = Router::new().route("/", get(|| async { "Hello, World"} ));
+
+    let listerner = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    axum::serve(listerner, app).await.unwrap();
 }

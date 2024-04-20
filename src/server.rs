@@ -51,15 +51,15 @@ async fn main() {
 }
 
 async fn upload(Path(manual): Path<Manual>, mut multipart: Multipart) {
+    use tokio::fs;
+
     if let Some(field) = multipart.next_field().await.unwrap() {
         let data = field.bytes().await.unwrap().to_vec();
 
-        use tokio::fs;
-
         let file_name = manual.to_path();
-        let path = PDF_FOLDER.get().clone().unwrap();
+        let path = PDF_FOLDER.get().unwrap();
 
-        let mut path = path.to_path_buf();
+        let mut path = path.clone();
 
         path.push(file_name);
 
@@ -72,15 +72,15 @@ async fn upload(Path(manual): Path<Manual>, mut multipart: Multipart) {
 async fn get_manual(Path(manual): Path<Manual>) -> impl IntoResponse {
     let file_name = manual.to_path();
 
-    let path = PDF_FOLDER.get().clone().unwrap();
+    let path = PDF_FOLDER.get().unwrap();
 
-    let mut path = path.to_path_buf();
+    let mut path = path.clone();
 
     path.push(file_name);
 
     let file = match tokio::fs::File::open(path).await {
         Ok(file) => file,
-        Err(err) => return Err((StatusCode::NOT_FOUND, format!("File not found: {}", err))),
+        Err(err) => return Err((StatusCode::NOT_FOUND, format!("File not found: {err}"))),
     };
 
     let stream = ReaderStream::new(file);

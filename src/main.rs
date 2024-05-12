@@ -64,6 +64,8 @@ async fn main() {
 
             Command::new("xdg-open")
                 .arg(path)
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
                 .spawn()
                 .expect("failed to open manual");
         }

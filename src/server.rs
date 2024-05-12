@@ -8,7 +8,7 @@
 #![forbid(unsafe_code)]
 #![allow(clippy::must_use_candidate)]
 
-use std::{fs, path::PathBuf, sync::OnceLock};
+use std::{fs, io, path::PathBuf, sync::OnceLock};
 
 use axum::{
     body::Body,
@@ -31,11 +31,31 @@ struct Config {
     path: PathBuf,
 }
 
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            ip: "127.0.0.1".to_string(),
+            port: 3000,
+            path: PathBuf::from(
+                std::env::var("HOME").expect("HOME enviorment variable not set")
+                    + "/.irlman/server/manuals/",
+            ),
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() {
-    let file_contents = fs::read("server.toml").expect("Failed to read config file");
-    let file_str = std::str::from_utf8(&file_contents).unwrap();
-    let config: Config = toml::from_str(file_str).unwrap();
+    let file_contents = get_config_file();
+
+    let config = file_contents.map_or_else(
+        |_| Config::default(),
+        |file_contents| {
+            let file_str = std::str::from_utf8(&file_contents)
+                .expect("Unable to decode contents of config file");
+            toml::from_str(file_str).expect("Invalid config")
+        },
+    );
 
     PDF_FOLDER.get_or_init(|| config.path);
 
@@ -48,6 +68,21 @@ async fn main() {
         .await
         .unwrap();
     axum::serve(listerner, app).await.unwrap();
+}
+
+/// Order of reading:
+/// passed in config file location
+/// /home/user/.config/irlman/server.toml
+/// /etc/irlman/server.toml
+fn get_config_file() -> Result<Vec<u8>, io::Error> {
+    fs::read(
+        std::env::var("HOME").expect("HOME enviorment variable not set")
+            + "/.config/irlman/sever.toml",
+    )
+    .map_or_else(
+        |_| fs::read("/etc/irlman/server"),
+        Ok,
+    )
 }
 
 async fn upload(Path(manual): Path<Manual>, mut multipart: Multipart) {

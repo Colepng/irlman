@@ -10,7 +10,7 @@ default-run = "irlman"
 name = "irlman"
 
 [[bin]]
-name = "server"
+name = "irlman-server"
 path = "src/server.rs"
 
 [dependencies]

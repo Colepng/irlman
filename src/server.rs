@@ -96,9 +96,13 @@ async fn upload(Path(manual): Path<Manual>, mut multipart: Multipart) {
 
         let mut path = path.clone();
 
+        if !path.try_exists().is_ok_and(|x| x == true) {
+            fs::create_dir_all(&path).await.expect("Failed to create directory to store manuals");
+        }
+
         path.push(file_name);
 
-        fs::write(path, data).await.unwrap();
+        fs::write(path, data).await.expect("Failed to write manual");
     } else {
         panic!("you no upload file >:( fuck u");
     }

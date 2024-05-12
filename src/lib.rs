@@ -34,7 +34,7 @@ lazy_static! {
 pub async fn get_manual(manual: Manual) -> Vec<u8> {
     let respone = CLIENT
         .get(format!(
-            "http://127.0.0.0:3000/get/{}/{}",
+            "http://127.0.0.1:3000/get/{}/{}",
             manual.company, manual.product
         ))
         .send()
@@ -59,7 +59,7 @@ pub async fn upload_manual(manual: Manual, path: PathBuf) {
 
     CLIENT
         .post(format!(
-            "http://127.0.0.0:3000/upload/{}/{}",
+            "http://127.0.0.1:3000/upload/{}/{}",
             manual.company, manual.product
         ))
         .multipart(form)

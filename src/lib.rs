@@ -31,26 +31,34 @@ lazy_static! {
     static ref CLIENT: Client = Client::new();
 }
 
-pub async fn get_manual(manual: Manual) -> Vec<u8> {
+
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("Path must exist to read file")]
+    PathDoesNotEixist(#[from] std::io::Error),
+    #[error("Failed to send upload request, is ip address correct and the server online?")]
+    FailedToSendRequest(#[from] reqwest::Error),
+}
+
+pub async fn get_manual(manual: Manual) -> anyhow::Result<Vec<u8>> {
     let respone = CLIENT
         .get(format!(
             "http://127.0.0.1:3000/get/{}/{}",
             manual.company, manual.product
         ))
         .send()
-        .await
-        .unwrap();
+        .await?;
 
-    let data = respone.bytes().await.unwrap();
+    let data = respone.bytes().await?;
 
-    data.to_vec()
+    Ok(data.to_vec())
 }
 
-pub async fn upload_manual(manual: Manual, path: PathBuf) {
+pub async fn upload_manual(manual: Manual, path: PathBuf) -> Result<(), Error>{
     use reqwest::multipart::Form;
     use reqwest::multipart::Part;
 
-    let file = tokio::fs::read(path).await.expect("Failed to read manual");
+    let file = tokio::fs::read(path).await?;
     let file_len = file.len() as u64;
 
     let part = Part::stream_with_length(file, file_len).file_name("test.txt");
@@ -64,6 +72,7 @@ pub async fn upload_manual(manual: Manual, path: PathBuf) {
         ))
         .multipart(form)
         .send()
-        .await
-        .unwrap();
+        .await?;
+
+    Ok(())
 }

@@ -10,6 +10,7 @@
 
 use std::path::PathBuf;
 
+use anyhow::Context;
 use clap::{Parser, Subcommand};
 use tokio::process::Command;
 
@@ -36,7 +37,7 @@ enum SubCommands {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> anyhow::Result<()> {
     let args = Cli::parse();
 
     match args.command {
@@ -47,7 +48,7 @@ async fn main() {
         } => {
             let manual = Manual { company, product };
 
-            upload_manual(manual, path).await;
+            upload_manual(manual, path).await.context("Failed to upload manual")?;
         }
         SubCommands::Get { company, product } => {
             let manual = Manual { company, product };
@@ -56,7 +57,7 @@ async fn main() {
 
             path.push(manual.to_path());
 
-            let file = get_manual(manual).await;
+            let file = get_manual(manual).await.context("Failed to get the manual")?;
 
             tokio::fs::write(path.clone(), file).await.unwrap();
 
@@ -70,4 +71,6 @@ async fn main() {
                 .expect("failed to open manual");
         }
     }
+
+    Ok(())
 }
